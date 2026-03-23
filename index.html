@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inflection Bot v6.2</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root{--bg:#FAF9F6;--card:#FFF;--border:#E8E6E1;--text:#1A1A18;--text2:#6B6B66;--text3:#9C9C96;--green:#2D8C4E;--gbg:#E8F5EC;--red:#C43D3D;--rbg:#FCE8E8;--blue:#2563EB;--bbg:#EBF2FF;--amber:#B8860B;--abg:#FFF8E6;--mono:'JetBrains Mono',monospace;--sans:'Noto Sans KR',sans-serif}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);font-family:var(--sans);color:var(--text);font-size:14px}
+
+/* Login & Setup */
+#login{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;align-items:center;justify-content:center}
+#login.hide{display:none}
+.lbox{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:36px;width:400px;text-align:center;box-shadow:0 4px 24px rgba(0,0,0,.04)}
+.llogo{font-family:var(--mono);font-size:22px;font-weight:700;letter-spacing:2px;margin-bottom:4px}
+.lsub{font-size:12px;color:var(--text3);margin-bottom:24px}
+.linput{width:100%;padding:11px 14px;border:1px solid var(--border);border-radius:6px;font-family:var(--mono);font-size:13px;outline:none;letter-spacing:1px;transition:border-color .2s;margin-bottom:8px;background:var(--card)}
+.linput:focus{border-color:var(--text)}
+.linput.err{border-color:var(--red);animation:shake .3s}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.lbtn{width:100%;padding:11px;border:none;border-radius:6px;background:var(--text);color:#fff;font-family:var(--sans);font-size:14px;font-weight:600;cursor:pointer;margin-top:6px;transition:opacity .15s}
+.lbtn:hover{opacity:.85}
+.lerr{font-size:12px;color:var(--red);margin-top:8px;min-height:16px}
+.linfo{font-size:11px;color:var(--text3);margin-top:16px;line-height:1.6;text-align:left;background:#FAFAF8;padding:12px;border-radius:6px}
+.linfo b{color:var(--text2);font-weight:600;display:block;margin-bottom:4px}
+.llabel{font-size:11px;color:var(--text3);text-align:left;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px;margin-top:12px}
+.llabel:first-of-type{margin-top:0}
+.lreset{font-size:11px;color:var(--blue);cursor:pointer;margin-top:10px;text-decoration:underline}
+.lreset:hover{opacity:.7}
+.lock-icon{font-size:28px;margin-bottom:10px;opacity:.6}
+.ldivider{height:1px;background:var(--border);margin:16px 0}
+.ltoggle{font-size:11px;color:var(--blue);cursor:pointer;margin-top:8px}
+.ltoggle:hover{opacity:.7}
+
+/* Status badges */
+.api-status{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:4px;font-size:10px;font-weight:600;letter-spacing:.3px}
+.api-on{background:var(--gbg);color:var(--green);border:1px solid #B4DFC4}
+.api-on::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--green);animation:pulse 1.5s infinite}
+.api-off{background:#F5F5F4;color:var(--text3);border:1px solid var(--border)}
+.api-err{background:var(--rbg);color:var(--red);border:1px solid #F0C4C4}
+
+/* Main */
+#main{display:none}
+#main.show{display:block}
+.ct{max-width:1400px;margin:0 auto;padding:16px 24px}
+.hd{display:flex;align-items:center;justify-content:space-between;padding:12px 0 16px;border-bottom:1px solid var(--border);margin-bottom:16px;flex-wrap:wrap;gap:8px}
+.logo{font-family:var(--mono);font-size:20px;font-weight:700;letter-spacing:2px}
+.badges{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.b{padding:4px 12px;border-radius:4px;font-size:11px;font-weight:600;letter-spacing:.5px}
+.b1{background:var(--text);color:#fff}.b2{background:var(--bbg);color:var(--blue);border:1px solid #C5D9F8}
+.b3{background:var(--gbg);color:var(--green);border:1px solid #B4DFC4}
+.b4{background:var(--green);color:#fff;display:flex;align-items:center;gap:4px}
+.b4::before{content:'';width:6px;height:6px;border-radius:50%;background:#fff;animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.hd-btns{display:flex;gap:6px}
+.hd-btn{padding:4px 12px;border-radius:4px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--card);color:var(--text2);transition:all .15s}
+.hd-btn:hover{border-color:var(--text3)}
+.hd-btn.danger:hover{border-color:var(--red);color:var(--red)}
+
+.tabs{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.tab{padding:8px 20px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--card);transition:all .15s}
+.tab:hover{border-color:var(--text3)}.tab.on{background:var(--text);color:#fff;border-color:var(--text)}
+.tp{font-family:var(--mono);font-weight:400;font-size:12px;margin-left:4px;opacity:.7}
+.mg{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:16px}
+.mc{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:14px 16px}
+.ml{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.mv{font-family:var(--mono);font-size:22px;font-weight:600}.ms{font-size:11px;color:var(--text2);margin-top:4px}
+.mv.g{color:var(--green)}.mv.r{color:var(--red)}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.gw{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:16px}
+.cd{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:20px}
+.ch{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.ct2{font-size:15px;font-weight:600}.cb{font-size:11px;color:var(--text3);font-family:var(--mono)}
+.ti{width:40px;height:40px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:20px}
+.ti.up{background:var(--gbg);color:var(--green)}.ti.dn{background:var(--rbg);color:var(--red)}
+.cr{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #F2F1ED;font-size:13px}
+.cr:last-child{border:none}.ck{color:var(--text2)}.cv{font-family:var(--mono);font-weight:500}
+.tl{width:100%;border-collapse:collapse;font-size:12px}
+.tl th{text-align:left;padding:8px 6px;color:var(--text3);font-weight:500;border-bottom:1px solid var(--border);font-size:11px;text-transform:uppercase;letter-spacing:.3px}
+.tl td{padding:6px;border-bottom:1px solid #F2F1ED;font-family:var(--mono);font-size:11px}
+.tl tr:hover{background:#FAFAF8}
+.pp{color:var(--green);font-weight:500}.pn{color:var(--red);font-weight:500}
+.dl{background:var(--gbg);color:var(--green);padding:2px 6px;border-radius:3px;font-size:10px;font-weight:600}
+.ds{background:var(--rbg);color:var(--red);padding:2px 6px;border-radius:3px;font-size:10px;font-weight:600}
+.ki{font-size:11px;color:var(--text2)}.ki span{font-family:var(--mono);font-weight:500;color:var(--text)}
+.pe{text-align:center;padding:30px 0;color:var(--text3)}
+.cw{position:relative;height:280px}
+.sb{padding:8px 12px;border-radius:6px;font-size:12px;font-weight:500;background:#F2F1ED;color:var(--text2)}
+.ft{text-align:center;padding:20px 0;font-size:11px;color:var(--text3)}
+
+/* Modal */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:8000;display:flex;align-items:center;justify-content:center}
+.modal-bg.hide{display:none}
+.modal{background:var(--card);border-radius:12px;padding:32px;width:420px;max-height:80vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.12)}
+.modal h3{font-size:16px;margin-bottom:16px}
+.modal .lbtn{margin-top:12px}
+
+@media(max-width:1200px){.mg{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:768px){.g2,.gw{grid-template-columns:1fr}.mg{grid-template-columns:repeat(2,1fr)}.lbox,.modal{width:95%;padding:24px}}
+</style>
+</head>
+<body>
+
+<!-- ===== LOGIN ===== -->
+<div id="login">
+  <div class="lbox">
+    <div class="lock-icon">🔐</div>
+    <div class="llogo">INFLECTION BOT</div>
+    <div class="lsub">v6.2 · Bitget 연동</div>
+
+    <!-- 최초 등록 -->
+    <div id="setupMode" style="display:none">
+      <div class="llabel">새 비밀번호 설정</div>
+      <input type="password" class="linput" id="newPw1" placeholder="비밀번호 (4자 이상)">
+      <input type="password" class="linput" id="newPw2" placeholder="비밀번호 확인">
+      <button class="lbtn" onclick="setupPassword()">비밀번호 등록</button>
+      <div class="lerr" id="setupErr"></div>
+    </div>
+
+    <!-- 로그인 -->
+    <div id="loginMode" style="display:none">
+      <input type="password" class="linput" id="pwi" placeholder="비밀번호 입력" autofocus>
+      <button class="lbtn" onclick="tryLogin()">로그인</button>
+      <div class="lerr" id="pwe"></div>
+      <div class="lreset" onclick="resetPassword()">비밀번호 재설정</div>
+    </div>
+
+    <div class="linfo">
+      <b>🛡️ 보안 안내</b>
+      비밀번호는 PBKDF2 해시로만 저장됩니다.<br>
+      API 키는 AES-256-GCM으로 암호화 저장 — 비밀번호 없이 해독 불가.<br>
+      로그인하면 API 자동 연동, 탭을 닫아도 다시 로그인만 하면 됩니다.
+    </div>
+  </div>
+</div>
+
+<!-- ===== API 설정 모달 ===== -->
+<div class="modal-bg hide" id="apiModal">
+  <div class="modal">
+    <h3>🔑 Bitget API 연동</h3>
+    <div class="llabel">API Key</div>
+    <input type="text" class="linput" id="apiKey" placeholder="bg_xxxxxxxxxx" autocomplete="off">
+    <div class="llabel">Secret Key</div>
+    <input type="password" class="linput" id="apiSecret" placeholder="시크릿 키 입력" autocomplete="off">
+    <div class="llabel">Passphrase</div>
+    <input type="password" class="linput" id="apiPass" placeholder="API 생성 시 설정한 비밀문구" autocomplete="off">
+    <div class="llabel">CORS 프록시 (선택)</div>
+    <input type="text" class="linput" id="proxyUrl" placeholder="https://your-worker.workers.dev" autocomplete="off">
+    <div style="font-size:10px;color:var(--text3);margin-top:-4px">GitHub Pages 배포 시 필요. 로컬 사용 시 비워두세요.</div>
+    <button class="lbtn" onclick="saveApiKeys()">연동하기</button>
+    <button class="lbtn" style="background:var(--card);color:var(--text);border:1px solid var(--border);margin-top:6px" onclick="closeApiModal()">취소</button>
+    <button class="lbtn" style="background:var(--rbg);color:var(--red);border:1px solid #F0C4C4;margin-top:6px" onclick="clearApiKeys()">🗑️ 저장된 API 키 삭제</button>
+    <div class="lerr" id="apiErr"></div>
+    <div class="linfo" style="margin-top:12px">
+      <b>🛡️ 보안 구조</b>
+      ✅ API 키는 <strong>AES-256-GCM</strong>으로 암호화되어 저장됩니다.<br>
+      ✅ 복호화는 로그인 비밀번호로만 가능합니다.<br>
+      ✅ 소스 코드나 브라우저 저장소를 봐도 암호문만 보입니다.<br>
+      ⚠️ 반드시 <strong>읽기 전용(Read Only)</strong> 키만 사용하세요.
+    </div>
+  </div>
+</div>
+
+<!-- ===== MAIN DASHBOARD ===== -->
+<div id="main">
+<div class="ct">
+
+<div class="hd">
+  <div>
+    <div class="logo">INFLECTION BOT</div>
+  </div>
+  <div class="badges">
+    <span class="b b1">LIVE</span>
+    <span class="b b2">KELTNER v6.2</span>
+    <span class="b b3">DD -16.4%</span>
+    <span class="b b4">RUNNING</span>
+    <span class="api-status api-off" id="apiStatusBadge">API 미연동</span>
+  </div>
+  <div class="hd-btns">
+    <button class="hd-btn" onclick="openApiModal()">🔑 API 설정</button>
+    <button class="hd-btn danger" onclick="doLogout()">로그아웃</button>
+  </div>
+</div>
+
+<div class="tabs">
+  <div class="tab on" onclick="sw(this,'BTCUSDT')">BTC <span class="tp" id="tb">$—</span></div>
+  <div class="tab" onclick="sw(this,'SOLUSDT')">SOL <span class="tp" id="ts">$—</span></div>
+  <div class="tab" onclick="sw(this,'DOGEUSDT')">DOGE <span class="tp" id="td">$—</span></div>
+  <div class="tab" onclick="sw(this,'LOG')">매매일지</div>
+</div>
+
+<div class="mg">
+  <div class="mc"><div class="ml" id="sl">BTCUSDT</div><div class="mv" id="cp">$—</div><div class="ms" id="pc">— · 30초 갱신</div></div>
+  <div class="mc"><div class="ml">선물 잔고</div><div class="mv g" id="eq">—</div><div class="ms" id="eqSub">API 연동 필요</div></div>
+  <div class="mc"><div class="ml">미실현 PnL</div><div class="mv" id="uPnl">—</div><div class="ms" id="uPnlSub">포지션 없음</div></div>
+  <div class="mc"><div class="ml">현재 포지션</div><div class="mv" id="pd">—</div><div class="ms" id="ps">포지션 없음</div></div>
+  <div class="mc"><div class="ml">총 실현 PnL</div><div class="mv" id="tp2">—</div><div class="ms" id="pns">API 연동 필요</div></div>
+  <div class="mc"><div class="ml">마지막 업데이트</div><div class="mv" id="lu" style="font-size:14px">—</div><div class="ms">30초 갱신</div></div>
+</div>
+
+<div class="gw">
+  <div class="cd">
+    <div class="ch"><div class="ct2">Price Chart</div><div class="cb"><span id="cs">BTCUSDT</span> 15m</div></div>
+    <div class="cw"><canvas id="pC"></canvas></div>
+    <div style="display:flex;gap:16px;justify-content:center;margin-top:10px">
+      <div class="ki">Keltner 상단: <span id="ku">—</span></div>
+      <div class="ki">중심: <span id="km">—</span></div>
+      <div class="ki">하단: <span id="kl">—</span></div>
+    </div>
+  </div>
+  <div class="cd">
+    <div class="ch"><div class="ct2">일봉 추세</div><div class="cb">DAILY BIAS</div></div>
+    <div style="text-align:center;padding:10px 0">
+      <div class="ti" id="tri">?</div>
+      <div style="font-size:22px;font-weight:700;margin:8px 0" id="trt">분석 중</div>
+      <div style="font-size:12px;color:var(--text2)" id="trs">EMA(21) vs EMA(55)</div>
+    </div>
+    <div style="margin-top:16px">
+      <div class="ch" style="margin-bottom:8px"><div style="font-size:13px;font-weight:600">Keltner 상태</div></div>
+      <div style="text-align:center;padding:6px 0;font-size:18px;font-weight:700" id="ks">돌파 대기</div>
+      <div style="text-align:center;font-size:11px;color:var(--text2)" id="kd">채널 분석 중</div>
+    </div>
+  </div>
+</div>
+
+<!-- 포지션 상세 -->
+<div class="g2">
+  <div class="cd">
+    <div class="ch"><div class="ct2">에퀴티</div><div class="cb">EQUITY</div></div>
+    <div class="cw" style="height:200px"><canvas id="eC"></canvas></div>
+  </div>
+  <div class="cd">
+    <div class="ch"><div class="ct2">활성 포지션</div><div class="cb">POSITIONS</div></div>
+    <div id="positionArea"><div class="pe">API 연동 후 포지션이 표시됩니다</div></div>
+  </div>
+</div>
+
+<div class="g2">
+  <div class="cd">
+    <div class="ch"><div class="ct2">봇 설정</div><div class="cb">CONFIG v6.2</div></div>
+    <div class="cr"><span class="ck">종목</span><span class="cv" id="cfs">BTCUSDT</span></div>
+    <div class="cr"><span class="ck">타임프레임</span><span class="cv">15m</span></div>
+    <div class="cr"><span class="ck">시그널</span><span class="cv">4H Keltner (20,14,x1.5)</span></div>
+    <div class="cr"><span class="ck">레버리지</span><span class="cv">최대 10x</span></div>
+    <div class="cr"><span class="ck">숏 리스크</span><span class="cv">2% / 강한 5%</span></div>
+    <div class="cr"><span class="ck">롱 리스크</span><span class="cv">0.8% / 강한 2%</span></div>
+    <div class="cr"><span class="ck">리스크 캡</span><span class="cv">5% 하드캡</span></div>
+    <div class="cr"><span class="ck">SL 기준</span><span class="cv">5봉 저점 - ATRx0.3</span></div>
+    <div class="cr"><span class="ck">RR</span><span class="cv">2:1</span></div>
+    <div class="cr"><span class="ck">본전 이동</span><span class="cv">0.5R → +0.1%</span></div>
+    <div class="cr"><span class="ck">수익 잠금</span><span class="cv">1.0R → +0.3R</span></div>
+    <div class="cr"><span class="ck">트레일링</span><span class="cv">1.5R → ATRx4</span></div>
+    <div class="cr" style="border-top:2px solid var(--border);margin-top:4px;padding-top:8px"><span class="ck" style="color:var(--red)">DD 축소 시작</span><span class="cv">-6%</span></div>
+    <div class="cr"><span class="ck" style="color:var(--red)">DD 강한 축소</span><span class="cv">-12%</span></div>
+    <div class="cr"><span class="ck" style="color:var(--red)">DD 매매 중지</span><span class="cv">-20%</span></div>
+    <div class="cr"><span class="ck" style="color:var(--red)">연속 손실</span><span class="cv">1연패 즉시 50%</span></div>
+  </div>
+  <div class="cd">
+    <div class="ch"><div class="ct2">최근 매매 (Bitget)</div><div class="cb">TRADE HISTORY</div></div>
+    <table class="tl"><thead><tr><th>시간</th><th>종목</th><th>방향</th><th>사이즈</th><th>PnL</th></tr></thead>
+    <tbody id="tbd"><tr><td colspan="5" style="text-align:center;color:var(--text3);padding:20px">API 연동 후 매매내역 표시</td></tr></tbody></table>
+    <div style="margin-top:20px">
+      <div style="font-size:13px;font-weight:600;margin-bottom:8px">15M 지표</div>
+      <div class="cr"><span class="ck">EMA(9) / EMA(21)</span><span class="cv" id="i15m">—</span></div>
+      <div class="cr"><span class="ck">RSI(14)</span><span class="cv" id="irsi">—</span></div>
+      <div class="cr"><span class="ck">1H 모멘텀</span><span class="cv" id="i1h">—</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="ft">Inflection Bot v6.2 · Keltner + DD Control · Bitget USDT-Futures</div>
+
+</div>
+</div>
+
+<script>
+// ===== CRYPTO UTILS =====
+const _SK='_ib_auth_v7', _SS='_ib_sess', _AK='_ib_api_enc', _SALT='inflection_bot_v62_salt';
+const _enc=new TextEncoder(), _dec=new TextDecoder();
+
+// PBKDF2 해시 (비밀번호 검증용)
+async function _hash(s){
+  const km=await crypto.subtle.importKey('raw',_enc.encode(s),'PBKDF2',false,['deriveBits']);
+  const bits=await crypto.subtle.deriveBits({name:'PBKDF2',salt:_enc.encode(_SALT),iterations:100000,hash:'SHA-256'},km,256);
+  return[...new Uint8Array(bits)].map(x=>x.toString(16).padStart(2,'0')).join('');
+}
+
+// PBKDF2 → AES-GCM 키 유도 (암호화/복호화용)
+async function _deriveAesKey(pw){
+  const km=await crypto.subtle.importKey('raw',_enc.encode(pw),'PBKDF2',false,['deriveKey']);
+  return crypto.subtle.deriveKey({name:'PBKDF2',salt:_enc.encode(_SALT+'_aes'),iterations:100000,hash:'SHA-256'},km,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);
+}
+
+// AES-GCM 암호화
+async function _aesEncrypt(pw,plaintext){
+  const key=await _deriveAesKey(pw);
+  const iv=crypto.getRandomValues(new Uint8Array(12));
+  const ct=await crypto.subtle.encrypt({name:'AES-GCM',iv},key,_enc.encode(plaintext));
+  // iv(12) + ciphertext → base64
+  const buf=new Uint8Array(iv.length+ct.byteLength);
+  buf.set(iv);buf.set(new Uint8Array(ct),iv.length);
+  return btoa(String.fromCharCode(...buf));
+}
+
+// AES-GCM 복호화
+async function _aesDecrypt(pw,b64){
+  try{
+    const key=await _deriveAesKey(pw);
+    const buf=Uint8Array.from(atob(b64),c=>c.charCodeAt(0));
+    const iv=buf.slice(0,12);
+    const ct=buf.slice(12);
+    const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv},key,ct);
+    return _dec.decode(pt);
+  }catch(e){return null}
+}
+
+// ===== AUTH =====
+let _currentPw=''; // 세션 중 비밀번호 (암호화/복호화에 사용)
+function _gs(){try{return JSON.parse(localStorage.getItem(_SK))}catch(e){return null}}
+
+function initAuth(){
+  const s=_gs();
+  if(!s){document.getElementById('setupMode').style.display='block';document.getElementById('loginMode').style.display='none';document.getElementById('newPw1').focus()}
+  else{document.getElementById('setupMode').style.display='none';document.getElementById('loginMode').style.display='block';document.getElementById('pwi').focus()}
+  // 세션 유지 불가 (비밀번호를 모르면 복호화 불가)
+}
+
+async function setupPassword(){
+  const p1=document.getElementById('newPw1').value,p2=document.getElementById('newPw2').value,e=document.getElementById('setupErr');
+  if(p1.length<4){e.textContent='4자 이상 입력하세요';return}
+  if(p1!==p2){e.textContent='비밀번호가 일치하지 않습니다';return}
+  const h=await _hash(p1);
+  localStorage.setItem(_SK,JSON.stringify({h,ts:Date.now()}));
+  _currentPw=p1;
+  e.textContent='';_unlock();
+}
+
+async function tryLogin(){
+  const inp=document.getElementById('pwi'),h=await _hash(inp.value),s=_gs();
+  if(s&&h===s.h){
+    _currentPw=inp.value;
+    // 저장된 API 키가 있으면 자동 복호화
+    await loadEncryptedApiKeys();
+    _unlock();
+  }else{
+    inp.classList.add('err');
+    document.getElementById('pwe').textContent='비밀번호가 틀렸습니다';
+    setTimeout(()=>{inp.classList.remove('err');inp.value=''},600);
+  }
+}
+
+async function loadEncryptedApiKeys(){
+  const stored=localStorage.getItem(_AK);
+  if(!stored||!_currentPw)return;
+  const json=await _aesDecrypt(_currentPw,stored);
+  if(!json)return;
+  try{
+    const d=JSON.parse(json);
+    BG_KEY=d.k||'';BG_SECRET=d.s||'';BG_PASS=d.p||'';BG_PROXY=d.px||'';
+    if(BG_KEY)setApiStatus('on');
+  }catch(e){}
+}
+
+function resetPassword(){
+  if(confirm('비밀번호를 재설정하시겠습니까?\nAPI 키 데이터도 함께 삭제됩니다.')){
+    localStorage.removeItem(_SK);localStorage.removeItem(_AK);
+    _currentPw='';BG_KEY='';BG_SECRET='';BG_PASS='';BG_PROXY='';
+    location.reload();
+  }
+}
+function doLogout(){_currentPw='';BG_KEY='';BG_SECRET='';BG_PASS='';BG_PROXY='';location.reload()}
+function _unlock(){document.getElementById('login').classList.add('hide');document.getElementById('main').classList.add('show');startBot()}
+
+document.addEventListener('keydown',e=>{
+  if(e.key!=='Enter')return;
+  const setup=document.getElementById('setupMode').style.display!=='none';
+  if(document.getElementById('login').classList.contains('hide'))return;
+  if(setup)setupPassword();else tryLogin();
+});
+initAuth();
+
+// ===== BITGET API =====
+let BG_KEY='',BG_SECRET='',BG_PASS='',BG_PROXY='';
+const BG_BASE='https://api.bitget.com';
+
+async function bgSign(ts,method,path,qs='',body=''){
+  const msg=ts+method.toUpperCase()+path+(qs?'?'+qs:'')+(body||'');
+  const key=await crypto.subtle.importKey('raw',_enc.encode(BG_SECRET),{name:'HMAC',hash:'SHA-256'},false,['sign']);
+  const sig=await crypto.subtle.sign('HMAC',key,_enc.encode(msg));
+  return btoa(String.fromCharCode(...new Uint8Array(sig)));
+}
+
+async function bgGet(path,params={}){
+  if(!BG_KEY)return null;
+  const qs=Object.entries(params).map(([k,v])=>k+'='+encodeURIComponent(v)).join('&');
+  const ts=Date.now().toString();
+  const sign=await bgSign(ts,'GET',path,qs);
+  const url=(BG_PROXY||BG_BASE)+path+(qs?'?'+qs:'');
+  try{
+    const r=await fetch(url,{
+      method:'GET',
+      headers:{
+        'Content-Type':'application/json',
+        'ACCESS-KEY':BG_KEY,
+        'ACCESS-SIGN':sign,
+        'ACCESS-TIMESTAMP':ts,
+        'ACCESS-PASSPHRASE':BG_PASS,
+        'locale':'en-US'
+      }
+    });
+    const d=await r.json();
+    if(d.code==='00000')return d.data;
+    console.warn('Bitget API error:',d.code,d.msg);
+    return null;
+  }catch(e){
+    console.warn('Bitget fetch error:',e.message);
+    return null;
+  }
+}
+
+function openApiModal(){
+  document.getElementById('apiModal').classList.remove('hide');
+  if(BG_KEY){document.getElementById('apiKey').value=BG_KEY;document.getElementById('apiSecret').value=BG_SECRET;document.getElementById('apiPass').value=BG_PASS;document.getElementById('proxyUrl').value=BG_PROXY}
+}
+function closeApiModal(){document.getElementById('apiModal').classList.add('hide')}
+
+async function saveApiKeys(){
+  const k=document.getElementById('apiKey').value.trim();
+  const s=document.getElementById('apiSecret').value.trim();
+  const p=document.getElementById('apiPass').value.trim();
+  const px=document.getElementById('proxyUrl').value.trim();
+  const err=document.getElementById('apiErr');
+  if(!k||!s||!p){err.textContent='모든 필드를 입력하세요';return}
+  BG_KEY=k;BG_SECRET=s;BG_PASS=p;BG_PROXY=px;
+  err.textContent='연결 테스트 중...';err.style.color='var(--blue)';
+  const test=await bgGet('/api/v2/mix/account/accounts',{productType:'USDT-FUTURES'});
+  if(test){
+    // 연동 성공 → AES-GCM으로 암호화해서 localStorage에 저장
+    if(_currentPw){
+      const payload=JSON.stringify({k:BG_KEY,s:BG_SECRET,p:BG_PASS,px:BG_PROXY});
+      const encrypted=await _aesEncrypt(_currentPw,payload);
+      localStorage.setItem(_AK,encrypted);
+    }
+    err.textContent='✅ 연동 성공! (암호화 저장 완료)';err.style.color='var(--green)';
+    setApiStatus('on');
+    setTimeout(()=>{closeApiModal();updateBitget()},800);
+  }else{
+    err.textContent='❌ 연결 실패. 키/Passphrase를 확인하거나 CORS 프록시를 설정하세요.';
+    err.style.color='var(--red)';
+    setApiStatus('err');
+  }
+}
+
+function clearApiKeys(){
+  if(confirm('저장된 API 키를 삭제하시겠습니까?')){
+    localStorage.removeItem(_AK);
+    BG_KEY='';BG_SECRET='';BG_PASS='';BG_PROXY='';
+    document.getElementById('apiKey').value='';
+    document.getElementById('apiSecret').value='';
+    document.getElementById('apiPass').value='';
+    document.getElementById('proxyUrl').value='';
+    setApiStatus('off');
+    document.getElementById('apiErr').textContent='API 키가 삭제되었습니다.';
+    document.getElementById('apiErr').style.color='var(--text2)';
+  }
+}
+
+function setApiStatus(st){
+  const el=document.getElementById('apiStatusBadge');
+  el.className='api-status';
+  if(st==='on'){el.classList.add('api-on');el.textContent='BITGET 연동'}
+  else if(st==='err'){el.classList.add('api-err');el.textContent='API 오류'}
+  else{el.classList.add('api-off');el.textContent='API 미연동'}
+}
+
+// ===== BITGET DATA FETCH =====
+async function updateBitget(){
+  if(!BG_KEY)return;
+
+  // 1. 선물 계정 잔고
+  const accts=await bgGet('/api/v2/mix/account/accounts',{productType:'USDT-FUTURES'});
+  if(accts&&accts.length>0){
+    const a=accts[0];
+    const equity=parseFloat(a.accountEquity||a.usdtEquity||0);
+    const unrealPL=parseFloat(a.unrealizedPL||a.crossedUnrealizedPL||0)+parseFloat(a.isolatedUnrealizedPL||0);
+    const avail=parseFloat(a.available||0);
+    document.getElementById('eq').textContent='$'+equity.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+    document.getElementById('eq').className='mv '+(equity>=0?'g':'r');
+    document.getElementById('eqSub').textContent='가용: $'+avail.toLocaleString(undefined,{maximumFractionDigits:2});
+    if(unrealPL!==0){
+      document.getElementById('uPnl').textContent=(unrealPL>=0?'+':'')+unrealPL.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+      document.getElementById('uPnl').className='mv '+(unrealPL>=0?'g':'r');
+      document.getElementById('uPnlSub').textContent='미실현 손익';
+    }
+    // 에퀴티 차트에 추가
+    addEquityPoint(equity);
+    setApiStatus('on');
+  }
+
+  // 2. 활성 포지션
+  const pos=await bgGet('/api/v2/mix/position/all-position',{productType:'USDT-FUTURES',marginCoin:'USDT'});
+  renderPositions(pos);
+
+  // 3. 포지션 히스토리 (최근 매매)
+  const hist=await bgGet('/api/v2/mix/position/history-position',{productType:'USDT-FUTURES'});
+  renderTradeHistory(hist);
+}
+
+function renderPositions(pos){
+  const area=document.getElementById('positionArea');
+  if(!pos||pos.length===0){
+    area.innerHTML='<div class="pe">포지션 없음 — 돌파 대기 중</div><div style="margin-top:12px"><div class="sb">SL 상태: 대기 중</div></div>';
+    document.getElementById('pd').textContent='—';
+    document.getElementById('ps').textContent='포지션 없음';
+    return;
+  }
+  let html='';
+  pos.forEach(p=>{
+    const side=p.holdSide==='long'?'LONG':'SHORT';
+    const sideClass=p.holdSide==='long'?'pp':'pn';
+    const sz=parseFloat(p.size||0);
+    const entry=parseFloat(p.openPriceAvg||0);
+    const mark=parseFloat(p.markPrice||0);
+    const pnl=parseFloat(p.unrealizedPL||0);
+    const lev=p.leverage||'—';
+    const liq=parseFloat(p.liquidationPrice||0);
+    html+=`
+      <div style="padding:10px 0;border-bottom:1px solid #F2F1ED">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <div><span class="${sideClass}" style="font-weight:700">${side}</span> <span style="font-family:var(--mono);font-size:12px">${p.symbol} ${lev}x</span></div>
+          <div class="${pnl>=0?'pp':'pn'}" style="font-family:var(--mono);font-weight:600">${pnl>=0?'+':''}${pnl.toFixed(2)} USDT</div>
+        </div>
+        <div style="display:flex;gap:16px;font-size:11px;color:var(--text2)">
+          <span>수량: <b style="color:var(--text)">${sz}</b></span>
+          <span>진입: <b style="color:var(--text)">${entry.toLocaleString()}</b></span>
+          <span>현재: <b style="color:var(--text)">${mark.toLocaleString()}</b></span>
+          ${liq>0?`<span>청산: <b style="color:var(--red)">${liq.toLocaleString()}</b></span>`:''}
+        </div>
+      </div>`;
+  });
+  area.innerHTML=html;
+  // 메인 카드 업데이트
+  const first=pos[0];
+  document.getElementById('pd').textContent=(first.holdSide==='long'?'▲ L':'▼ S')+' '+first.symbol;
+  document.getElementById('pd').className='mv '+(first.holdSide==='long'?'g':'r');
+  document.getElementById('ps').textContent=pos.length+'개 포지션 활성';
+}
+
+function renderTradeHistory(hist){
+  const tbody=document.getElementById('tbd');
+  if(!hist||!hist.list||hist.list.length===0){
+    tbody.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:20px">최근 매매내역 없음</td></tr>';
+    return;
+  }
+  let totalPnl=0,wins=0,total=0;
+  let html='';
+  const trades=hist.list.slice(0,20);
+  trades.forEach(t=>{
+    const pnl=parseFloat(t.netProfit||t.achievedProfits||0);
+    const side=t.holdSide==='long'?'LONG':'SHORT';
+    const sideClass=t.holdSide==='long'?'dl':'ds';
+    const time=new Date(parseInt(t.uTime||t.cTime)).toLocaleString('ko',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+    totalPnl+=pnl;total++;if(pnl>0)wins++;
+    html+=`<tr>
+      <td>${time}</td>
+      <td>${t.symbol||'—'}</td>
+      <td><span class="${sideClass}">${side}</span></td>
+      <td>${parseFloat(t.openTotalPos||t.size||0)}</td>
+      <td class="${pnl>=0?'pp':'pn'}">${pnl>=0?'+':''}${pnl.toFixed(2)}</td>
+    </tr>`;
+  });
+  tbody.innerHTML=html;
+  document.getElementById('tp2').textContent=(totalPnl>=0?'+':'')+totalPnl.toFixed(2);
+  document.getElementById('tp2').className='mv '+(totalPnl>=0?'g':'r');
+  document.getElementById('pns').textContent=`${total}건 · 승률 ${total>0?((wins/total)*100).toFixed(0):0}%`;
+}
+
+// 에퀴티 차트
+const eqHistory=[];
+function addEquityPoint(val){
+  const now=new Date().toLocaleTimeString('ko',{hour:'2-digit',minute:'2-digit'});
+  eqHistory.push({t:now,v:val});
+  if(eqHistory.length>60)eqHistory.shift();
+  eC.data.labels=eqHistory.map(e=>e.t);
+  eC.data.datasets[0].data=eqHistory.map(e=>e.v);
+  eC.update('none');
+}
+
+// ===== CHARTS =====
+const pC=new Chart(document.getElementById('pC'),{type:'line',data:{labels:[],datasets:[
+  {data:[],borderColor:'#1A1A18',borderWidth:1.5,pointRadius:0,fill:false,tension:.1},
+  {data:[],borderColor:'rgba(37,99,235,.3)',borderWidth:1,borderDash:[4,4],pointRadius:0,fill:false},
+  {data:[],borderColor:'rgba(196,61,61,.3)',borderWidth:1,borderDash:[4,4],pointRadius:0,fill:false}
+]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:10,family:"'JetBrains Mono'"},maxTicksLimit:8},grid:{display:false}},y:{position:'right',ticks:{font:{size:10,family:"'JetBrains Mono'"},callback:v=>'$'+v.toLocaleString()},grid:{color:'#F2F1ED'}}},interaction:{intersect:false,mode:'index'}}});
+
+const eC=new Chart(document.getElementById('eC'),{type:'line',data:{labels:[],datasets:[
+  {data:[],borderColor:'#2D8C4E',backgroundColor:'rgba(45,140,78,.08)',borderWidth:1.5,pointRadius:0,fill:true,tension:.3}
+]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{display:false},y:{ticks:{font:{size:10,family:"'JetBrains Mono'"},callback:v=>'$'+v.toLocaleString()},grid:{color:'#F2F1ED'}}}}});
+
+// ===== BYBIT PUBLIC API (시세/캔들) =====
+let SYM='BTCUSDT';const API='https://api.bybit.com';
+async function fp(s){try{const r=await fetch(`${API}/v5/market/tickers?category=linear&symbol=${s}`);const d=await r.json();if(d.retCode===0&&d.result.list[0]){const t=d.result.list[0];return{p:+t.lastPrice,c:+t.price24hPcnt*100}}}catch(e){}return null}
+async function fk(s,i,n){try{const r=await fetch(`${API}/v5/market/kline?category=linear&symbol=${s}&interval=${i}&limit=${n}`);const d=await r.json();if(d.retCode===0)return d.result.list.reverse().map(r=>({t:new Date(+r[0]),o:+r[1],h:+r[2],l:+r[3],c:+r[4],v:+r[5]}))}catch(e){}return[]}
+
+// ===== INDICATORS =====
+function em(d,p){const k=2/(p+1);let r=[d[0]];for(let i=1;i<d.length;i++)r.push(d[i]*k+r[i-1]*(1-k));return r}
+function at(c,p){let t=[c[0].h-c[0].l];for(let i=1;i<c.length;i++)t.push(Math.max(c[i].h-c[i].l,Math.abs(c[i].h-c[i-1].c),Math.abs(c[i].l-c[i-1].c)));return em(t,p)}
+function rs(d,p){let g=[0],l=[0];for(let i=1;i<d.length;i++){const x=d[i]-d[i-1];g.push(x>0?x:0);l.push(x<0?-x:0)}const ag=em(g,p),al=em(l,p);return ag.map((v,i)=>al[i]===0?100:100-100/(1+v/al[i]))}
+
+// ===== UPDATE =====
+async function upd(){
+  const syms=[['BTCUSDT','tb'],['SOLUSDT','ts'],['DOGEUSDT','td']];
+  for(const[s,id]of syms){const d=await fp(s);if(d){document.getElementById(id).textContent='$'+(s==='DOGEUSDT'?d.p.toFixed(4):d.p.toLocaleString(undefined,{maximumFractionDigits:2}));if(s===SYM){const dc=s==='DOGEUSDT'?4:2;document.getElementById('cp').textContent='$'+d.p.toLocaleString(undefined,{maximumFractionDigits:dc});document.getElementById('cp').className='mv '+(d.c>=0?'g':'r');document.getElementById('pc').textContent=`${d.c>=0?'+':''}${d.c.toFixed(2)}% (24h) · 30초 갱신`}}}
+
+  const kl=await fk(SYM,'15',96);
+  if(kl.length>0){pC.data.labels=kl.map(k=>k.t.toLocaleTimeString('ko',{hour:'2-digit',minute:'2-digit'}));pC.data.datasets[0].data=kl.map(k=>k.c);pC.update('none')}
+
+  const h4=await fk(SYM,'240',30);
+  if(h4.length>20){const c=h4.map(k=>k.c),e=em(c,20),a=at(h4,14),le=e[e.length-1],la=a[a.length-1],u=le+la*1.5,lo=le-la*1.5,lc=c[c.length-1],dc=SYM==='DOGEUSDT'?4:0;
+    document.getElementById('ku').textContent='$'+u.toFixed(dc);document.getElementById('km').textContent='$'+le.toFixed(dc);document.getElementById('kl').textContent='$'+lo.toFixed(dc);
+    if(lc>u){document.getElementById('ks').textContent='상단 돌파!';document.getElementById('ks').style.color='var(--green)';document.getElementById('kd').textContent='롱 시그널 — 15M 풀백 탐색'}
+    else if(lc<lo){document.getElementById('ks').textContent='하단 돌파!';document.getElementById('ks').style.color='var(--red)';document.getElementById('kd').textContent='숏 시그널 — 15M 풀백 탐색'}
+    else{document.getElementById('ks').textContent='채널 내부';document.getElementById('ks').style.color='var(--text)';document.getElementById('kd').textContent=`상단 ${((u-lc)/lc*100).toFixed(2)}% · 하단 ${((lc-lo)/lc*100).toFixed(2)}%`}
+    if(kl.length>0){pC.data.datasets[1].data=new Array(kl.length).fill(u);pC.data.datasets[2].data=new Array(kl.length).fill(lo);pC.update('none')}}
+
+  const d1=await fk(SYM,'D',60);
+  if(d1.length>55){const c=d1.map(k=>k.c),e21=em(c,21),e55=em(c,55),v21=e21[e21.length-1],v55=e55[e55.length-1];
+    if(v21>v55){document.getElementById('tri').className='ti up';document.getElementById('tri').textContent='▲';document.getElementById('trt').textContent='상승추세';document.getElementById('trt').style.color='var(--green)';document.getElementById('trs').textContent=`EMA21 ${v21.toFixed(0)} > EMA55 ${v55.toFixed(0)}`}
+    else{document.getElementById('tri').className='ti dn';document.getElementById('tri').textContent='▼';document.getElementById('trt').textContent='하락추세';document.getElementById('trt').style.color='var(--red)';document.getElementById('trs').textContent=`EMA21 ${v21.toFixed(0)} < EMA55 ${v55.toFixed(0)}`}}
+
+  if(kl.length>30){const c=kl.map(k=>k.c),e9=em(c,9),e21=em(c,21),r=rs(c,14),v9=e9[e9.length-1],v21=e21[e21.length-1],vr=r[r.length-1];
+    document.getElementById('i15m').textContent=v9>v21?`정배열 (${v9.toFixed(0)}>${v21.toFixed(0)})`:`역배열 (${v9.toFixed(0)}<${v21.toFixed(0)})`;document.getElementById('i15m').style.color=v9>v21?'var(--green)':'var(--red)';
+    document.getElementById('irsi').textContent=vr.toFixed(1);document.getElementById('irsi').style.color=vr>50?'var(--green)':'var(--red)'}
+
+  const h1=await fk(SYM,'60',60);
+  if(h1.length>55){const c=h1.map(k=>k.c),e21=em(c,21),e55=em(c,55),v21=e21[e21.length-1],v55=e55[e55.length-1];
+    document.getElementById('i1h').textContent=v21>v55?'롱 유리 (EMA21>55)':'숏 유리 (EMA21<55)';document.getElementById('i1h').style.color=v21>v55?'var(--green)':'var(--red)'}
+
+  document.getElementById('lu').textContent=new Date().toLocaleString('ko');
+
+  // Bitget 데이터 업데이트
+  await updateBitget();
+}
+
+function sw(el,s){if(s==='LOG')return;SYM=s;document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));el.classList.add('on');document.getElementById('sl').textContent=s;document.getElementById('cs').textContent=s;document.getElementById('cfs').textContent=s;upd()}
+
+function startBot(){upd();setInterval(upd,30000)}
+</script>
+</body>
+</html>
