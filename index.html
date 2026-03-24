@@ -390,17 +390,19 @@ async function bgGet(path,params={}){
   if(!BG_KEY)return null;
   const qs=Object.entries(params).map(([k,v])=>k+'='+encodeURIComponent(v)).join('&');
   const fullPath=path+(qs?'?'+qs:'');
-  const url=(BG_PROXY||BG_BASE)+fullPath;
+  // Vercel proxy: send target path as header, call any proxy endpoint
+  const url=BG_PROXY?BG_PROXY+'/api/bgfetch':BG_BASE+fullPath;
+  const headers=BG_PROXY?{
+    'Content-Type':'application/json',
+    'X-BG-KEY':BG_KEY,
+    'X-BG-SECRET':BG_SECRET,
+    'X-BG-PASS':BG_PASS,
+    'X-BG-PATH':fullPath
+  }:{
+    'Content-Type':'application/json'
+  };
   try{
-    const r=await fetch(url,{
-      method:'GET',
-      headers:{
-        'Content-Type':'application/json',
-        'X-BG-KEY':BG_KEY,
-        'X-BG-SECRET':BG_SECRET,
-        'X-BG-PASS':BG_PASS
-      }
-    });
+    const r=await fetch(url,{method:'GET',headers});
     const d=await r.json();
     if(d.code==='00000')return d.data;
     console.warn('Bitget API error:',d.code,d.msg);
