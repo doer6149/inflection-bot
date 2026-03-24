@@ -762,7 +762,7 @@ async function upd(){
 
 function sw(el,s){if(s==='LOG')return;SYM=s;document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));el.classList.add('on');document.getElementById('sl').textContent=s;document.getElementById('cs').textContent=s;document.getElementById('cfs').textContent=s;upd()}
 
-function startBot(){upd();setInterval(upd,30000)}
+function startBot(){setTimeout(()=>{chart.resize(tvChartEl.clientWidth,480);rsiChart.resize(rsiChartEl.clientWidth,100)},200);upd();setInterval(upd,30000)}
 </script>
 </body>
 </html>
