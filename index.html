@@ -554,7 +554,7 @@ function renderTradeHistory(hist){
     const pnl=parseFloat(t.netProfit||t.achievedProfits||0);
     const side=t.holdSide==='long'?'LONG':'SHORT';
     const sideClass=t.holdSide==='long'?'dl':'ds';
-    const time=new Date(parseInt(t.uTime||t.cTime)).toLocaleString('ko',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+    const time=new Date(Number(t.updatedTime||t.closedTime||t.closeTime||t.uTime||t.cTime||t.createdTime||t.openTime||0)).toLocaleString('ko',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
     totalPnl+=pnl;total++;if(pnl>0)wins++;
     html+=`<tr>
       <td>${time}</td>
