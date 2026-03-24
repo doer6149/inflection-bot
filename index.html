@@ -6,6 +6,7 @@
 <title>Inflection Bot v6.2</title>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://unpkg.com/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
 <style>
 :root{--bg:#FAF9F6;--card:#FFF;--border:#E8E6E1;--text:#1A1A18;--text2:#6B6B66;--text3:#9C9C96;--green:#2D8C4E;--gbg:#E8F5EC;--red:#C43D3D;--rbg:#FCE8E8;--blue:#2563EB;--bbg:#EBF2FF;--amber:#B8860B;--abg:#FFF8E6;--mono:'JetBrains Mono',monospace;--sans:'Noto Sans KR',sans-serif}
 *{margin:0;padding:0;box-sizing:border-box}
@@ -201,28 +202,32 @@ body{background:var(--bg);font-family:var(--sans);color:var(--text);font-size:14
   <div class="mc"><div class="ml">마지막 업데이트</div><div class="mv" id="lu" style="font-size:14px">—</div><div class="ms">30초 갱신</div></div>
 </div>
 
-<div class="gw">
-  <div class="cd">
-    <div class="ch"><div class="ct2">Price Chart</div><div class="cb"><span id="cs">BTCUSDT</span> 15m</div></div>
-    <div class="cw"><canvas id="pC"></canvas></div>
-    <div style="display:flex;gap:16px;justify-content:center;margin-top:10px">
-      <div class="ki">Keltner 상단: <span id="ku">—</span></div>
-      <div class="ki">중심: <span id="km">—</span></div>
-      <div class="ki">하단: <span id="kl">—</span></div>
+<div class="cd" style="margin-bottom:16px">
+  <div class="ch"><div class="ct2">Price Chart</div><div class="cb"><span id="cs">BTCUSDT</span> 15m · 캔들</div></div>
+  <div id="tvChart" style="width:100%;height:480px;border-radius:6px;overflow:hidden"></div>
+  <div id="rsiChart" style="width:100%;height:100px;border-radius:0 0 6px 6px;overflow:hidden;border-top:1px solid var(--border)"></div>
+  <div style="display:flex;gap:16px;justify-content:center;margin-top:10px;flex-wrap:wrap">
+    <div class="ki" style="display:flex;gap:12px;align-items:center">
+      <span><span style="color:#E6A817;font-weight:700">━</span> EMA(9)</span>
+      <span><span style="color:#7C3AED;font-weight:700">━</span> EMA(21)</span>
+      <span><span style="color:rgba(37,99,235,0.7);font-weight:700">┅</span> Keltner 상단</span>
+      <span><span style="color:rgba(196,61,61,0.7);font-weight:700">┅</span> Keltner 하단</span>
+      <span><span style="color:#2D8C4E;font-weight:700">▲</span> 롱진입</span>
+      <span><span style="color:#C43D3D;font-weight:700">▼</span> 숏진입</span>
+      <span><span style="color:#2D8C4E;font-weight:700">●</span> 익절</span>
+      <span><span style="color:#C43D3D;font-weight:700">●</span> 손절</span>
     </div>
   </div>
-  <div class="cd">
-    <div class="ch"><div class="ct2">일봉 추세</div><div class="cb">DAILY BIAS</div></div>
-    <div style="text-align:center;padding:10px 0">
-      <div class="ti" id="tri">?</div>
-      <div style="font-size:22px;font-weight:700;margin:8px 0" id="trt">분석 중</div>
-      <div style="font-size:12px;color:var(--text2)" id="trs">EMA(21) vs EMA(55)</div>
+  <div style="display:flex;gap:16px;justify-content:center;margin-top:6px;flex-wrap:wrap">
+    <div class="ki">Keltner 상단: <span id="ku">—</span></div>
+    <div class="ki">중심: <span id="km">—</span></div>
+    <div class="ki">하단: <span id="kl">—</span></div>
+    <div class="ki" style="margin-left:16px;padding-left:16px;border-left:1px solid var(--border)">
+      <span id="tri" style="font-size:14px">?</span>
+      <span id="trt" style="font-weight:600">분석 중</span>
+      <span id="trs" style="font-size:10px;color:var(--text3);margin-left:4px">EMA(21) vs EMA(55)</span>
     </div>
-    <div style="margin-top:16px">
-      <div class="ch" style="margin-bottom:8px"><div style="font-size:13px;font-weight:600">Keltner 상태</div></div>
-      <div style="text-align:center;padding:6px 0;font-size:18px;font-weight:700" id="ks">돌파 대기</div>
-      <div style="text-align:center;font-size:11px;color:var(--text2)" id="kd">채널 분석 중</div>
-    </div>
+    <div class="ki">Keltner: <span id="ks" style="font-weight:600">—</span> <span id="kd" style="font-size:10px;color:var(--text3)"></span></div>
   </div>
 </div>
 
@@ -568,6 +573,8 @@ function renderTradeHistory(hist){
   document.getElementById('tp2').textContent=(totalPnl>=0?'+':'')+totalPnl.toFixed(2);
   document.getElementById('tp2').className='mv '+(totalPnl>=0?'g':'r');
   document.getElementById('pns').textContent=`${total}건 · 승률 ${total>0?((wins/total)*100).toFixed(0):0}%`;
+  // 차트에 매매 마커 표시
+  if(lastKlineData.length>0)setTradeMarkers(hist,lastKlineData);
 }
 
 // 에퀴티 차트
@@ -581,13 +588,90 @@ function addEquityPoint(val){
   eC.update('none');
 }
 
-// ===== CHARTS =====
-const pC=new Chart(document.getElementById('pC'),{type:'line',data:{labels:[],datasets:[
-  {data:[],borderColor:'#1A1A18',borderWidth:1.5,pointRadius:0,fill:false,tension:.1},
-  {data:[],borderColor:'rgba(37,99,235,.3)',borderWidth:1,borderDash:[4,4],pointRadius:0,fill:false},
-  {data:[],borderColor:'rgba(196,61,61,.3)',borderWidth:1,borderDash:[4,4],pointRadius:0,fill:false}
-]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:10,family:"'JetBrains Mono'"},maxTicksLimit:8},grid:{display:false}},y:{position:'right',ticks:{font:{size:10,family:"'JetBrains Mono'"},callback:v=>'$'+v.toLocaleString()},grid:{color:'#F2F1ED'}}},interaction:{intersect:false,mode:'index'}}});
+// ===== TRADINGVIEW LIGHTWEIGHT CHARTS =====
+const tvChartEl=document.getElementById('tvChart');
+const chart=LightweightCharts.createChart(tvChartEl,{
+  layout:{background:{type:'solid',color:'#FFFFFF'},textColor:'#6B6B66',fontFamily:"'JetBrains Mono', monospace",fontSize:11},
+  grid:{vertLines:{color:'#F2F1ED'},horzLines:{color:'#F2F1ED'}},
+  crosshair:{mode:0},
+  rightPriceScale:{borderColor:'#E8E6E1'},
+  timeScale:{borderColor:'#E8E6E1',timeVisible:true,secondsVisible:false},
+  handleScroll:{mouseWheel:true,pressedMouseMove:true},
+  handleScale:{mouseWheel:true,pinch:true},
+});
 
+// 캔들스틱
+const candleSeries=chart.addCandlestickSeries({
+  upColor:'#2D8C4E',downColor:'#C43D3D',borderUpColor:'#2D8C4E',borderDownColor:'#C43D3D',
+  wickUpColor:'#2D8C4E',wickDownColor:'#C43D3D'
+});
+
+// 거래량 히스토그램
+const volumeSeries=chart.addHistogramSeries({
+  priceFormat:{type:'volume'},
+  priceScaleId:'vol',
+});
+chart.priceScale('vol').applyOptions({scaleMargins:{top:0.85,bottom:0}});
+
+// EMA(9) — 15M (노란색)
+const ema9Line=chart.addLineSeries({color:'#E6A817',lineWidth:1.5,priceLineVisible:false,lastValueVisible:true,title:'EMA9'});
+// EMA(21) — 15M (보라색)
+const ema21Line=chart.addLineSeries({color:'#7C3AED',lineWidth:1.5,priceLineVisible:false,lastValueVisible:true,title:'EMA21'});
+
+// Keltner Channel (4H)
+const kUpperLine=chart.addLineSeries({color:'rgba(37,99,235,0.5)',lineWidth:1,lineStyle:2,priceLineVisible:false,lastValueVisible:false,title:'K-Upper'});
+const kLowerLine=chart.addLineSeries({color:'rgba(196,61,61,0.5)',lineWidth:1,lineStyle:2,priceLineVisible:false,lastValueVisible:false,title:'K-Lower'});
+const kMidLine=chart.addLineSeries({color:'rgba(180,180,170,0.5)',lineWidth:1,lineStyle:1,priceLineVisible:false,lastValueVisible:false,title:'K-Mid'});
+
+// RSI(14) — 별도 하단 차트
+const rsiChartEl=document.getElementById('rsiChart');
+const rsiChart=LightweightCharts.createChart(rsiChartEl,{
+  layout:{background:{type:'solid',color:'#FFFFFF'},textColor:'#6B6B66',fontFamily:"'JetBrains Mono', monospace",fontSize:11},
+  grid:{vertLines:{color:'#F2F1ED'},horzLines:{color:'#F2F1ED'}},
+  crosshair:{mode:0},
+  rightPriceScale:{borderColor:'#E8E6E1',autoScale:false,scaleMargins:{top:0.05,bottom:0.05}},
+  timeScale:{borderColor:'#E8E6E1',timeVisible:true,secondsVisible:false,visible:false},
+  handleScroll:{mouseWheel:true,pressedMouseMove:true},
+  handleScale:{mouseWheel:true,pinch:true},
+});
+rsiChart.priceScale('right').applyOptions({autoScale:false});
+const rsiLine=rsiChart.addLineSeries({color:'#2563EB',lineWidth:1.5,priceLineVisible:false,lastValueVisible:true,title:'RSI(14)'});
+// RSI 과매수/과매도 라인
+const rsi70=rsiChart.addLineSeries({color:'rgba(196,61,61,0.3)',lineWidth:1,lineStyle:2,priceLineVisible:false,lastValueVisible:false});
+const rsi30=rsiChart.addLineSeries({color:'rgba(45,140,78,0.3)',lineWidth:1,lineStyle:2,priceLineVisible:false,lastValueVisible:false});
+const rsi50Line=rsiChart.addLineSeries({color:'rgba(180,180,170,0.3)',lineWidth:1,lineStyle:1,priceLineVisible:false,lastValueVisible:false});
+
+// 차트 시간축 동기화
+chart.timeScale().subscribeVisibleLogicalRangeChange(range=>{if(range)rsiChart.timeScale().setVisibleLogicalRange(range)});
+rsiChart.timeScale().subscribeVisibleLogicalRangeChange(range=>{if(range)chart.timeScale().setVisibleLogicalRange(range)});
+
+let tradeMarkers=[];
+function setTradeMarkers(trades,klineData){
+  if(!trades||!trades.list||!klineData||klineData.length===0)return;
+  const markers=[];
+  const firstTime=klineData[0].time;
+  const lastTime=klineData[klineData.length-1].time;
+  trades.list.forEach(t=>{
+    const openTs=Math.floor(Number(t.ctime||t.openTime||0)/1000);
+    const closeTs=Math.floor(Number(t.utime||t.closedTime||0)/1000);
+    const side=t.holdSide;
+    const pnl=parseFloat(t.netProfit||0);
+    const openPrice=parseFloat(t.openAvgPrice||t.openPriceAvg||0);
+    const closePrice=parseFloat(t.closeAvgPrice||t.closePriceAvg||0);
+    const openCandleT=openTs-openTs%(15*60);
+    const closeCandleT=closeTs-closeTs%(15*60);
+    if(openCandleT>=firstTime&&openCandleT<=lastTime&&openPrice>0){
+      markers.push({time:openCandleT,position:side==='long'?'belowBar':'aboveBar',color:side==='long'?'#2D8C4E':'#C43D3D',shape:side==='long'?'arrowUp':'arrowDown',text:(side==='long'?'L ':'S ')+openPrice.toFixed(0)});
+    }
+    if(closeCandleT>=firstTime&&closeCandleT<=lastTime&&closePrice>0){
+      markers.push({time:closeCandleT,position:pnl>=0?'aboveBar':'belowBar',color:pnl>=0?'#2D8C4E':'#C43D3D',shape:'circle',text:(pnl>=0?'+':'')+pnl.toFixed(1)});
+    }
+  });
+  markers.sort((a,b)=>a.time-b.time);
+  candleSeries.setMarkers(markers);
+}
+
+// Equity mini chart (Chart.js)
 const eC=new Chart(document.getElementById('eC'),{type:'line',data:{labels:[],datasets:[
   {data:[],borderColor:'#2D8C4E',backgroundColor:'rgba(45,140,78,.08)',borderWidth:1.5,pointRadius:0,fill:true,tension:.3}
 ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{display:false},y:{ticks:{font:{size:10,family:"'JetBrains Mono'"},callback:v=>'$'+v.toLocaleString()},grid:{color:'#F2F1ED'}}}}});
@@ -602,26 +686,65 @@ function em(d,p){const k=2/(p+1);let r=[d[0]];for(let i=1;i<d.length;i++)r.push(
 function at(c,p){let t=[c[0].h-c[0].l];for(let i=1;i<c.length;i++)t.push(Math.max(c[i].h-c[i].l,Math.abs(c[i].h-c[i-1].c),Math.abs(c[i].l-c[i-1].c)));return em(t,p)}
 function rs(d,p){let g=[0],l=[0];for(let i=1;i<d.length;i++){const x=d[i]-d[i-1];g.push(x>0?x:0);l.push(x<0?-x:0)}const ag=em(g,p),al=em(l,p);return ag.map((v,i)=>al[i]===0?100:100-100/(1+v/al[i]))}
 
+let lastKlineData=[];
+
 // ===== UPDATE =====
 async function upd(){
   const syms=[['BTCUSDT','tb'],['SOLUSDT','ts'],['DOGEUSDT','td']];
   for(const[s,id]of syms){const d=await fp(s);if(d){document.getElementById(id).textContent='$'+(s==='DOGEUSDT'?d.p.toFixed(4):d.p.toLocaleString(undefined,{maximumFractionDigits:2}));if(s===SYM){const dc=s==='DOGEUSDT'?4:2;document.getElementById('cp').textContent='$'+d.p.toLocaleString(undefined,{maximumFractionDigits:dc});document.getElementById('cp').className='mv '+(d.c>=0?'g':'r');document.getElementById('pc').textContent=`${d.c>=0?'+':''}${d.c.toFixed(2)}% (24h) · 30초 갱신`}}}
 
-  const kl=await fk(SYM,'15',96);
-  if(kl.length>0){pC.data.labels=kl.map(k=>k.t.toLocaleTimeString('ko',{hour:'2-digit',minute:'2-digit'}));pC.data.datasets[0].data=kl.map(k=>k.c);pC.update('none')}
+  // 15m 캔들 → TradingView chart
+  const kl=await fk(SYM,'15',200);
+  if(kl.length>0){
+    const tvData=kl.map(k=>({time:Math.floor(k.t.getTime()/1000),open:k.o,high:k.h,low:k.l,close:k.c}));
+    candleSeries.setData(tvData);
+    lastKlineData=tvData;
 
+    // 거래량 히스토그램
+    volumeSeries.setData(kl.map(k=>({
+      time:Math.floor(k.t.getTime()/1000),
+      value:k.v,
+      color:k.c>=k.o?'rgba(45,140,78,0.3)':'rgba(196,61,61,0.3)'
+    })));
+
+    // EMA(9) / EMA(21) 라인
+    const closes=kl.map(k=>k.c);
+    const ema9Vals=em(closes,9);
+    const ema21Vals=em(closes,21);
+    ema9Line.setData(tvData.map((d,i)=>({time:d.time,value:ema9Vals[i]})));
+    ema21Line.setData(tvData.map((d,i)=>({time:d.time,value:ema21Vals[i]})));
+
+    // RSI(14) 하단 차트
+    const rsiVals=rs(closes,14);
+    rsiLine.setData(tvData.map((d,i)=>({time:d.time,value:rsiVals[i]})));
+    rsi70.setData(tvData.map(d=>({time:d.time,value:70})));
+    rsi30.setData(tvData.map(d=>({time:d.time,value:30})));
+    rsi50Line.setData(tvData.map(d=>({time:d.time,value:50})));
+
+    chart.timeScale().fitContent();
+  }
+
+  // 4H Keltner
   const h4=await fk(SYM,'240',30);
   if(h4.length>20){const c=h4.map(k=>k.c),e=em(c,20),a=at(h4,14),le=e[e.length-1],la=a[a.length-1],u=le+la*1.5,lo=le-la*1.5,lc=c[c.length-1],dc=SYM==='DOGEUSDT'?4:0;
     document.getElementById('ku').textContent='$'+u.toFixed(dc);document.getElementById('km').textContent='$'+le.toFixed(dc);document.getElementById('kl').textContent='$'+lo.toFixed(dc);
-    if(lc>u){document.getElementById('ks').textContent='상단 돌파!';document.getElementById('ks').style.color='var(--green)';document.getElementById('kd').textContent='롱 시그널 — 15M 풀백 탐색'}
-    else if(lc<lo){document.getElementById('ks').textContent='하단 돌파!';document.getElementById('ks').style.color='var(--red)';document.getElementById('kd').textContent='숏 시그널 — 15M 풀백 탐색'}
+    if(lc>u){document.getElementById('ks').textContent='상단 돌파!';document.getElementById('ks').style.color='var(--green)';document.getElementById('kd').textContent='롱 시그널'}
+    else if(lc<lo){document.getElementById('ks').textContent='하단 돌파!';document.getElementById('ks').style.color='var(--red)';document.getElementById('kd').textContent='숏 시그널'}
     else{document.getElementById('ks').textContent='채널 내부';document.getElementById('ks').style.color='var(--text)';document.getElementById('kd').textContent=`상단 ${((u-lc)/lc*100).toFixed(2)}% · 하단 ${((lc-lo)/lc*100).toFixed(2)}%`}
-    if(kl.length>0){pC.data.datasets[1].data=new Array(kl.length).fill(u);pC.data.datasets[2].data=new Array(kl.length).fill(lo);pC.update('none')}}
+    // Keltner lines on chart
+    if(kl.length>0){
+      const klTimes=kl.map(k=>({time:Math.floor(k.t.getTime()/1000)}));
+      kUpperLine.setData(klTimes.map(t=>({...t,value:u})));
+      kLowerLine.setData(klTimes.map(t=>({...t,value:lo})));
+      kMidLine.setData(klTimes.map(t=>({...t,value:le})));
+    }
+  }
 
+  // Daily trend
   const d1=await fk(SYM,'D',60);
   if(d1.length>55){const c=d1.map(k=>k.c),e21=em(c,21),e55=em(c,55),v21=e21[e21.length-1],v55=e55[e55.length-1];
-    if(v21>v55){document.getElementById('tri').className='ti up';document.getElementById('tri').textContent='▲';document.getElementById('trt').textContent='상승추세';document.getElementById('trt').style.color='var(--green)';document.getElementById('trs').textContent=`EMA21 ${v21.toFixed(0)} > EMA55 ${v55.toFixed(0)}`}
-    else{document.getElementById('tri').className='ti dn';document.getElementById('tri').textContent='▼';document.getElementById('trt').textContent='하락추세';document.getElementById('trt').style.color='var(--red)';document.getElementById('trs').textContent=`EMA21 ${v21.toFixed(0)} < EMA55 ${v55.toFixed(0)}`}}
+    if(v21>v55){document.getElementById('tri').textContent='▲';document.getElementById('trt').textContent='상승추세';document.getElementById('trt').style.color='var(--green)';document.getElementById('trs').textContent=`EMA21 ${v21.toFixed(0)} > EMA55 ${v55.toFixed(0)}`}
+    else{document.getElementById('tri').textContent='▼';document.getElementById('trt').textContent='하락추세';document.getElementById('trt').style.color='var(--red)';document.getElementById('trs').textContent=`EMA21 ${v21.toFixed(0)} < EMA55 ${v55.toFixed(0)}`}}
 
   if(kl.length>30){const c=kl.map(k=>k.c),e9=em(c,9),e21=em(c,21),r=rs(c,14),v9=e9[e9.length-1],v21=e21[e21.length-1],vr=r[r.length-1];
     document.getElementById('i15m').textContent=v9>v21?`정배열 (${v9.toFixed(0)}>${v21.toFixed(0)})`:`역배열 (${v9.toFixed(0)}<${v21.toFixed(0)})`;document.getElementById('i15m').style.color=v9>v21?'var(--green)':'var(--red)';
