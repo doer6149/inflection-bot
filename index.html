@@ -100,7 +100,7 @@ body{background:var(--bg);font-family:var(--sans);color:var(--text);font-size:14
 .modal .lbtn{margin-top:12px}
 
 @media(max-width:1200px){.mg{grid-template-columns:repeat(3,1fr)}}
-@media(max-width:768px){.g2,.gw{grid-template-columns:1fr}.mg{grid-template-columns:repeat(2,1fr)}.lbox,.modal{width:95%;padding:24px}}
+@media(max-width:768px){.g2,.gw{grid-template-columns:1fr}.mg{grid-template-columns:repeat(2,1fr)}.lbox,.modal{width:95%;padding:24px}#strategyPanel .g2{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -191,6 +191,7 @@ body{background:var(--bg);font-family:var(--sans);color:var(--text);font-size:14
   <div class="tab" onclick="sw(this,'SOLUSDT')">SOL <span class="tp" id="ts">$—</span></div>
   <div class="tab" onclick="sw(this,'DOGEUSDT')">DOGE <span class="tp" id="td">$—</span></div>
   <div class="tab" onclick="sw(this,'LOG')">매매일지</div>
+  <div class="tab" onclick="showPanel('strategyPanel')">📋 매매전략</div>
 </div>
 
 <div class="mg">
@@ -231,7 +232,7 @@ body{background:var(--bg);font-family:var(--sans);color:var(--text);font-size:14
   </div>
 </div>
 
-<!-- 포지션 상세 -->
+<!-- 포지션 & 에퀴티 -->
 <div class="g2">
   <div class="cd">
     <div class="ch"><div class="ct2">에퀴티</div><div class="cb">EQUITY</div></div>
@@ -243,38 +244,167 @@ body{background:var(--bg);font-family:var(--sans);color:var(--text);font-size:14
   </div>
 </div>
 
-<div class="g2">
-  <div class="cd">
-    <div class="ch"><div class="ct2">봇 설정</div><div class="cb">CONFIG v6.2</div></div>
-    <div class="cr"><span class="ck">종목</span><span class="cv" id="cfs">BTCUSDT</span></div>
-    <div class="cr"><span class="ck">타임프레임</span><span class="cv">15m</span></div>
-    <div class="cr"><span class="ck">시그널</span><span class="cv">4H Keltner (20,14,x1.5)</span></div>
-    <div class="cr"><span class="ck">레버리지</span><span class="cv">최대 10x</span></div>
-    <div class="cr"><span class="ck">숏 리스크</span><span class="cv">2% / 강한 5%</span></div>
-    <div class="cr"><span class="ck">롱 리스크</span><span class="cv">0.8% / 강한 2%</span></div>
-    <div class="cr"><span class="ck">리스크 캡</span><span class="cv">5% 하드캡</span></div>
-    <div class="cr"><span class="ck">SL 기준</span><span class="cv">5봉 저점 - ATRx0.3</span></div>
-    <div class="cr"><span class="ck">RR</span><span class="cv">2:1</span></div>
-    <div class="cr"><span class="ck">본전 이동</span><span class="cv">0.5R → +0.1%</span></div>
-    <div class="cr"><span class="ck">수익 잠금</span><span class="cv">1.0R → +0.3R</span></div>
-    <div class="cr"><span class="ck">트레일링</span><span class="cv">1.5R → ATRx4</span></div>
-    <div class="cr" style="border-top:2px solid var(--border);margin-top:4px;padding-top:8px"><span class="ck" style="color:var(--red)">DD 축소 시작</span><span class="cv">-6%</span></div>
-    <div class="cr"><span class="ck" style="color:var(--red)">DD 강한 축소</span><span class="cv">-12%</span></div>
-    <div class="cr"><span class="ck" style="color:var(--red)">DD 매매 중지</span><span class="cv">-20%</span></div>
-    <div class="cr"><span class="ck" style="color:var(--red)">연속 손실</span><span class="cv">1연패 즉시 50%</span></div>
-  </div>
-  <div class="cd">
-    <div class="ch"><div class="ct2">최근 매매 (Bitget)</div><div class="cb">TRADE HISTORY</div></div>
-    <table class="tl"><thead><tr><th>시간</th><th>종목</th><th>방향</th><th>사이즈</th><th>PnL</th></tr></thead>
-    <tbody id="tbd"><tr><td colspan="5" style="text-align:center;color:var(--text3);padding:20px">API 연동 후 매매내역 표시</td></tr></tbody></table>
-    <div style="margin-top:20px">
-      <div style="font-size:13px;font-weight:600;margin-bottom:8px">15M 지표</div>
-      <div class="cr"><span class="ck">EMA(9) / EMA(21)</span><span class="cv" id="i15m">—</span></div>
-      <div class="cr"><span class="ck">RSI(14)</span><span class="cv" id="irsi">—</span></div>
-      <div class="cr"><span class="ck">1H 모멘텀</span><span class="cv" id="i1h">—</span></div>
+<!-- 실시간 지표 상태 -->
+<div class="cd" style="margin-bottom:16px">
+  <div class="ch"><div class="ct2">📊 실시간 지표 상태</div><div class="cb">LIVE INDICATORS</div></div>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px">
+    <div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:6px">15M EMA 정배열</div>
+      <div style="font-family:var(--mono);font-size:15px;font-weight:600" id="i15m">—</div>
+    </div>
+    <div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:6px">15M RSI(14)</div>
+      <div style="font-family:var(--mono);font-size:15px;font-weight:600" id="irsi">—</div>
+    </div>
+    <div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:6px">1H 모멘텀</div>
+      <div style="font-family:var(--mono);font-size:15px;font-weight:600" id="i1h">—</div>
+    </div>
+    <div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:6px">4H Keltner</div>
+      <div style="font-family:var(--mono);font-size:15px;font-weight:600" id="ks2">—</div>
     </div>
   </div>
 </div>
+
+<!-- 최근 매매 -->
+<div class="cd" style="margin-bottom:16px">
+  <div class="ch"><div class="ct2">최근 매매 (Bitget)</div><div class="cb">TRADE HISTORY</div></div>
+  <table class="tl"><thead><tr><th>시간</th><th>종목</th><th>방향</th><th>사이즈</th><th>PnL</th></tr></thead>
+  <tbody id="tbd"><tr><td colspan="5" style="text-align:center;color:var(--text3);padding:20px">API 연동 후 매매내역 표시</td></tr></tbody></table>
+</div>
+
+<!-- ===== 매매전략 매뉴얼 (숨김, 탭 클릭시 표시) ===== -->
+<div id="strategyPanel" style="display:none">
+
+<div class="cd" style="margin-bottom:16px;border-left:3px solid var(--blue)">
+  <div class="ch"><div class="ct2">📋 Inflection Bot v6.2 — 매매전략 매뉴얼</div><div class="cb">STRATEGY MANUAL</div></div>
+  <div style="font-size:13px;color:var(--text2);line-height:1.8;margin-bottom:16px">
+    Keltner Channel 돌파 기반 변곡점 매매 시스템. 4H 채널로 방향을 잡고, 15M 풀백에서 진입한다.
+  </div>
+</div>
+
+<!-- 전략 STEP 1: 방향 판단 -->
+<div class="g2" style="margin-bottom:16px">
+  <div class="cd" style="border-left:3px solid var(--green)">
+    <div class="ch"><div class="ct2">STEP 1 — 방향 판단</div><div class="cb">DIRECTION</div></div>
+    <div style="font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:12px">
+      상위 타임프레임에서 추세 방향을 확인한 후, 해당 방향으로만 진입한다.
+    </div>
+    <div class="cr"><span class="ck">일봉 추세</span><span class="cv">EMA(21) vs EMA(55)</span></div>
+    <div class="cr"><span class="ck">↳ 상승추세</span><span class="cv" style="color:var(--green)">EMA21 > EMA55 → 롱 우선</span></div>
+    <div class="cr"><span class="ck">↳ 하락추세</span><span class="cv" style="color:var(--red)">EMA21 < EMA55 → 숏 우선</span></div>
+    <div class="cr" style="margin-top:8px"><span class="ck">1H 모멘텀</span><span class="cv">EMA(21) vs EMA(55)</span></div>
+    <div class="cr"><span class="ck">↳ 확인 조건</span><span class="cv">일봉과 1H 방향 일치 시 강한 시그널</span></div>
+  </div>
+  <div class="cd" style="border-left:3px solid var(--blue)">
+    <div class="ch"><div class="ct2">STEP 2 — 시그널 포착</div><div class="cb">SIGNAL</div></div>
+    <div style="font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:12px">
+      4H Keltner Channel 돌파가 핵심 시그널이다.
+    </div>
+    <div class="cr"><span class="ck">Keltner 설정</span><span class="cv">EMA(20), ATR(14), 배수 x1.5</span></div>
+    <div class="cr"><span class="ck">롱 시그널</span><span class="cv" style="color:var(--green)">가격 > Keltner 상단</span></div>
+    <div class="cr"><span class="ck">숏 시그널</span><span class="cv" style="color:var(--red)">가격 < Keltner 하단</span></div>
+    <div class="cr"><span class="ck">채널 내부</span><span class="cv">매매 대기 (시그널 없음)</span></div>
+    <div class="cr" style="margin-top:8px"><span class="ck">무효 조건</span><span class="cv" style="color:var(--amber)">일봉 추세와 반대 방향 시그널</span></div>
+  </div>
+</div>
+
+<!-- 전략 STEP 3-4: 진입 & 청산 -->
+<div class="g2" style="margin-bottom:16px">
+  <div class="cd" style="border-left:3px solid #7C3AED">
+    <div class="ch"><div class="ct2">STEP 3 — 진입 타이밍</div><div class="cb">ENTRY</div></div>
+    <div style="font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:12px">
+      4H 돌파 후 15M 차트에서 풀백 진입 타이밍을 잡는다.
+    </div>
+    <div class="cr"><span class="ck">타임프레임</span><span class="cv">15분봉</span></div>
+    <div class="cr"><span class="ck">EMA 확인</span><span class="cv">EMA(9) > EMA(21) 정배열 (롱)</span></div>
+    <div class="cr"><span class="ck">RSI 확인</span><span class="cv">RSI(14) > 50 (롱) / < 50 (숏)</span></div>
+    <div class="cr"><span class="ck">풀백 진입</span><span class="cv">EMA(21) 터치 후 반등 시 진입</span></div>
+    <div class="cr" style="margin-top:8px"><span class="ck" style="color:var(--amber)">진입 금지</span><span class="cv">RSI 과매수(>70) 롱 / 과매도(<30) 숏</span></div>
+  </div>
+  <div class="cd" style="border-left:3px solid var(--amber)">
+    <div class="ch"><div class="ct2">STEP 4 — 청산 규칙</div><div class="cb">EXIT & SL/TP</div></div>
+    <div style="font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:12px">
+      손절은 빠르게, 익절은 단계적으로 관리한다.
+    </div>
+    <div class="cr"><span class="ck">SL 기준</span><span class="cv">5봉 저점 - ATR x 0.3</span></div>
+    <div class="cr"><span class="ck">RR 최소</span><span class="cv">2:1 (TP ≥ 2 × SL)</span></div>
+    <div class="cr" style="margin-top:8px;border-top:1px solid var(--border);padding-top:8px"><span class="ck">본전 이동</span><span class="cv">+0.5R 도달 → SL을 +0.1%로</span></div>
+    <div class="cr"><span class="ck">수익 잠금</span><span class="cv">+1.0R 도달 → SL을 +0.3R로</span></div>
+    <div class="cr"><span class="ck">트레일링</span><span class="cv">+1.5R 도달 → ATR x 4 트레일링</span></div>
+  </div>
+</div>
+
+<!-- 리스크 관리 -->
+<div class="g2" style="margin-bottom:16px">
+  <div class="cd" style="border-left:3px solid var(--red)">
+    <div class="ch"><div class="ct2">⚠️ 리스크 관리</div><div class="cb">RISK MANAGEMENT</div></div>
+    <div style="font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:12px">
+      자본 보존이 최우선. DD 구간별로 리스크를 자동 축소한다.
+    </div>
+    <div class="cr"><span class="ck">롱 리스크</span><span class="cv">기본 0.8% / 강한 시그널 2%</span></div>
+    <div class="cr"><span class="ck">숏 리스크</span><span class="cv">기본 2% / 강한 시그널 5%</span></div>
+    <div class="cr"><span class="ck">리스크 캡</span><span class="cv">5% 하드캡 (절대 초과 금지)</span></div>
+    <div class="cr"><span class="ck">레버리지</span><span class="cv">최대 10x</span></div>
+    <div class="cr" style="margin-top:8px;border-top:2px solid var(--border);padding-top:8px"><span class="ck" style="color:var(--red)">DD -6%</span><span class="cv">리스크 50% 축소</span></div>
+    <div class="cr"><span class="ck" style="color:var(--red)">DD -12%</span><span class="cv">리스크 75% 축소 (강한 시그널만)</span></div>
+    <div class="cr"><span class="ck" style="color:var(--red)">DD -20%</span><span class="cv">매매 완전 중지</span></div>
+    <div class="cr"><span class="ck" style="color:var(--red)">연속 손실</span><span class="cv">1연패 즉시 리스크 50% 축소</span></div>
+  </div>
+  <div class="cd" style="border-left:3px solid var(--text3)">
+    <div class="ch"><div class="ct2">📐 봇 파라미터</div><div class="cb">CONFIG v6.2</div></div>
+    <div style="font-size:11px;color:var(--text3);margin-bottom:12px">실시간 봇이 사용하는 핵심 설정값</div>
+    <div class="cr"><span class="ck">종목</span><span class="cv" id="cfs">BTCUSDT</span></div>
+    <div class="cr"><span class="ck">진입 TF</span><span class="cv">15m</span></div>
+    <div class="cr"><span class="ck">시그널 TF</span><span class="cv">4H</span></div>
+    <div class="cr"><span class="ck">추세 TF</span><span class="cv">Daily + 1H</span></div>
+    <div class="cr" style="margin-top:8px;border-top:1px solid var(--border);padding-top:8px"><span class="ck">Keltner</span><span class="cv">EMA(20), ATR(14), x1.5</span></div>
+    <div class="cr"><span class="ck">진입 EMA</span><span class="cv">EMA(9) / EMA(21)</span></div>
+    <div class="cr"><span class="ck">RSI</span><span class="cv">RSI(14)</span></div>
+    <div class="cr"><span class="ck">추세 EMA</span><span class="cv">EMA(21) / EMA(55)</span></div>
+    <div class="cr" style="margin-top:8px;border-top:1px solid var(--border);padding-top:8px"><span class="ck">수수료</span><span class="cv">Maker 0.02% / Taker 0.06%</span></div>
+    <div class="cr"><span class="ck">슬리피지</span><span class="cv">0.01%</span></div>
+    <div class="cr"><span class="ck">펀딩</span><span class="cv">0.01% / 8h</span></div>
+  </div>
+</div>
+
+<!-- 체크리스트 -->
+<div class="cd" style="margin-bottom:16px;border-left:3px solid var(--green)">
+  <div class="ch"><div class="ct2">✅ 진입 전 체크리스트</div><div class="cb">PRE-ENTRY CHECKLIST</div></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:12px">
+    <div>
+      <div style="font-weight:600;margin-bottom:8px;color:var(--green)">롱 진입 조건</div>
+      <div style="line-height:2;color:var(--text2)">
+        ☐ 일봉 EMA21 > EMA55 (상승추세)<br>
+        ☐ 1H EMA21 > EMA55 (모멘텀 확인)<br>
+        ☐ 4H 가격 > Keltner 상단 (시그널)<br>
+        ☐ 15M EMA9 > EMA21 (정배열)<br>
+        ☐ 15M RSI > 50, < 70<br>
+        ☐ 풀백 → EMA21 근처 반등 확인<br>
+        ☐ SL 설정 (5봉 저점 - ATR×0.3)<br>
+        ☐ RR ≥ 2:1 확인<br>
+        ☐ DD 한도 내 리스크 확인
+      </div>
+    </div>
+    <div>
+      <div style="font-weight:600;margin-bottom:8px;color:var(--red)">숏 진입 조건</div>
+      <div style="line-height:2;color:var(--text2)">
+        ☐ 일봉 EMA21 < EMA55 (하락추세)<br>
+        ☐ 1H EMA21 < EMA55 (모멘텀 확인)<br>
+        ☐ 4H 가격 < Keltner 하단 (시그널)<br>
+        ☐ 15M EMA9 < EMA21 (역배열)<br>
+        ☐ 15M RSI < 50, > 30<br>
+        ☐ 풀백 → EMA21 근처 반락 확인<br>
+        ☐ SL 설정 (5봉 고점 + ATR×0.3)<br>
+        ☐ RR ≥ 2:1 확인<br>
+        ☐ DD 한도 내 리스크 확인
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /strategyPanel -->
 
 <div class="ft">Inflection Bot v6.2 · Keltner + DD Control · Bitget USDT-Futures</div>
 
@@ -652,8 +782,8 @@ function setTradeMarkers(trades,klineData){
   const firstTime=klineData[0].time;
   const lastTime=klineData[klineData.length-1].time;
   trades.list.filter(t=>(t.symbol||'').toUpperCase()===SYM.toUpperCase()).forEach(t=>{
-    const openTs=Math.floor(Number(t.ctime||t.openTime||0)/1000);
-    const closeTs=Math.floor(Number(t.utime||t.closedTime||0)/1000);
+    const openTs=Math.floor(Number(t.ctime||t.openTime||0)/1000)+TZ_OFFSET;
+    const closeTs=Math.floor(Number(t.utime||t.closedTime||0)/1000)+TZ_OFFSET;
     const side=t.holdSide;
     const pnl=parseFloat(t.netProfit||0);
     const openPrice=parseFloat(t.openAvgPrice||t.openPriceAvg||0);
@@ -677,6 +807,7 @@ const eC=new Chart(document.getElementById('eC'),{type:'line',data:{labels:[],da
 ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{display:false},y:{ticks:{font:{size:10,family:"'JetBrains Mono'"},callback:v=>'$'+v.toLocaleString()},grid:{color:'#F2F1ED'}}}}});
 
 // ===== BYBIT PUBLIC API (시세/캔들) =====
+const TZ_OFFSET=new Date().getTimezoneOffset()*-60; // 한국: +32400 (9시간)
 let SYM='BTCUSDT';const API='https://api.bybit.com';
 async function fp(s){try{const r=await fetch(`${API}/v5/market/tickers?category=linear&symbol=${s}`);const d=await r.json();if(d.retCode===0&&d.result.list[0]){const t=d.result.list[0];return{p:+t.lastPrice,c:+t.price24hPcnt*100}}}catch(e){}return null}
 async function fk(s,i,n){try{const r=await fetch(`${API}/v5/market/kline?category=linear&symbol=${s}&interval=${i}&limit=${n}`);const d=await r.json();if(d.retCode===0)return d.result.list.reverse().map(r=>({t:new Date(+r[0]),o:+r[1],h:+r[2],l:+r[3],c:+r[4],v:+r[5]}))}catch(e){}return[]}
@@ -696,13 +827,13 @@ async function upd(){
   // 15m 캔들 → TradingView chart
   const kl=await fk(SYM,'15',500);
   if(kl.length>0){
-    const tvData=kl.map(k=>({time:Math.floor(k.t.getTime()/1000),open:k.o,high:k.h,low:k.l,close:k.c}));
+    const tvData=kl.map(k=>({time:Math.floor(k.t.getTime()/1000)+TZ_OFFSET,open:k.o,high:k.h,low:k.l,close:k.c}));
     candleSeries.setData(tvData);
     lastKlineData=tvData;
 
     // 거래량 히스토그램
     volumeSeries.setData(kl.map(k=>({
-      time:Math.floor(k.t.getTime()/1000),
+      time:Math.floor(k.t.getTime()/1000)+TZ_OFFSET,
       value:k.v,
       color:k.c>=k.o?'rgba(45,140,78,0.3)':'rgba(196,61,61,0.3)'
     })));
@@ -728,12 +859,12 @@ async function upd(){
   const h4=await fk(SYM,'240',30);
   if(h4.length>20){const c=h4.map(k=>k.c),e=em(c,20),a=at(h4,14),le=e[e.length-1],la=a[a.length-1],u=le+la*1.5,lo=le-la*1.5,lc=c[c.length-1],dc=SYM==='DOGEUSDT'?4:0;
     document.getElementById('ku').textContent='$'+u.toFixed(dc);document.getElementById('km').textContent='$'+le.toFixed(dc);document.getElementById('kl').textContent='$'+lo.toFixed(dc);
-    if(lc>u){document.getElementById('ks').textContent='상단 돌파!';document.getElementById('ks').style.color='var(--green)';document.getElementById('kd').textContent='롱 시그널'}
-    else if(lc<lo){document.getElementById('ks').textContent='하단 돌파!';document.getElementById('ks').style.color='var(--red)';document.getElementById('kd').textContent='숏 시그널'}
-    else{document.getElementById('ks').textContent='채널 내부';document.getElementById('ks').style.color='var(--text)';document.getElementById('kd').textContent=`상단 ${((u-lc)/lc*100).toFixed(2)}% · 하단 ${((lc-lo)/lc*100).toFixed(2)}%`}
+    if(lc>u){document.getElementById('ks').textContent='상단 돌파!';document.getElementById('ks').style.color='var(--green)';document.getElementById('kd').textContent='롱 시그널';document.getElementById('ks2').textContent='상단 돌파!';document.getElementById('ks2').style.color='var(--green)'}
+    else if(lc<lo){document.getElementById('ks').textContent='하단 돌파!';document.getElementById('ks').style.color='var(--red)';document.getElementById('kd').textContent='숏 시그널';document.getElementById('ks2').textContent='하단 돌파!';document.getElementById('ks2').style.color='var(--red)'}
+    else{document.getElementById('ks').textContent='채널 내부';document.getElementById('ks').style.color='var(--text)';document.getElementById('kd').textContent=`상단 ${((u-lc)/lc*100).toFixed(2)}% · 하단 ${((lc-lo)/lc*100).toFixed(2)}%`;document.getElementById('ks2').textContent=`채널 내부`;document.getElementById('ks2').style.color='var(--text)'}
     // Keltner lines on chart
     if(kl.length>0){
-      const klTimes=kl.map(k=>({time:Math.floor(k.t.getTime()/1000)}));
+      const klTimes=kl.map(k=>({time:Math.floor(k.t.getTime()/1000)+TZ_OFFSET}));
       kUpperLine.setData(klTimes.map(t=>({...t,value:u})));
       kLowerLine.setData(klTimes.map(t=>({...t,value:lo})));
       kMidLine.setData(klTimes.map(t=>({...t,value:le})));
@@ -758,6 +889,12 @@ async function upd(){
 
   // Bitget 데이터 업데이트
   await updateBitget();
+}
+
+function showPanel(id){
+  const panel=document.getElementById(id);
+  if(panel.style.display==='none'){panel.style.display='block';window.scrollTo({top:panel.offsetTop-100,behavior:'smooth'})}
+  else{panel.style.display='none'}
 }
 
 function sw(el,s){if(s==='LOG')return;SYM=s;document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));el.classList.add('on');document.getElementById('sl').textContent=s;document.getElementById('cs').textContent=s;document.getElementById('cfs').textContent=s;upd()}
