@@ -651,7 +651,7 @@ function setTradeMarkers(trades,klineData){
   const markers=[];
   const firstTime=klineData[0].time;
   const lastTime=klineData[klineData.length-1].time;
-  trades.list.forEach(t=>{
+  trades.list.filter(t=>(t.symbol||'').toUpperCase()===SYM.toUpperCase()).forEach(t=>{
     const openTs=Math.floor(Number(t.ctime||t.openTime||0)/1000);
     const closeTs=Math.floor(Number(t.utime||t.closedTime||0)/1000);
     const side=t.holdSide;
@@ -694,7 +694,7 @@ async function upd(){
   for(const[s,id]of syms){const d=await fp(s);if(d){document.getElementById(id).textContent='$'+(s==='DOGEUSDT'?d.p.toFixed(4):d.p.toLocaleString(undefined,{maximumFractionDigits:2}));if(s===SYM){const dc=s==='DOGEUSDT'?4:2;document.getElementById('cp').textContent='$'+d.p.toLocaleString(undefined,{maximumFractionDigits:dc});document.getElementById('cp').className='mv '+(d.c>=0?'g':'r');document.getElementById('pc').textContent=`${d.c>=0?'+':''}${d.c.toFixed(2)}% (24h) · 30초 갱신`}}}
 
   // 15m 캔들 → TradingView chart
-  const kl=await fk(SYM,'15',200);
+  const kl=await fk(SYM,'15',500);
   if(kl.length>0){
     const tvData=kl.map(k=>({time:Math.floor(k.t.getTime()/1000),open:k.o,high:k.h,low:k.l,close:k.c}));
     candleSeries.setData(tvData);
