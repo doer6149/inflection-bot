@@ -386,29 +386,19 @@ initAuth();
 let BG_KEY='',BG_SECRET='',BG_PASS='',BG_PROXY='';
 const BG_BASE='https://api.bitget.com';
 
-async function bgSign(ts,method,path,qs='',body=''){
-  const msg=ts+method.toUpperCase()+path+(qs?'?'+qs:'')+(body||'');
-  const key=await crypto.subtle.importKey('raw',_enc.encode(BG_SECRET),{name:'HMAC',hash:'SHA-256'},false,['sign']);
-  const sig=await crypto.subtle.sign('HMAC',key,_enc.encode(msg));
-  return btoa(String.fromCharCode(...new Uint8Array(sig)));
-}
-
 async function bgGet(path,params={}){
   if(!BG_KEY)return null;
   const qs=Object.entries(params).map(([k,v])=>k+'='+encodeURIComponent(v)).join('&');
-  const ts=Date.now().toString();
-  const sign=await bgSign(ts,'GET',path,qs);
-  const url=(BG_PROXY||BG_BASE)+path+(qs?'?'+qs:'');
+  const fullPath=path+(qs?'?'+qs:'');
+  const url=(BG_PROXY||BG_BASE)+fullPath;
   try{
     const r=await fetch(url,{
       method:'GET',
       headers:{
         'Content-Type':'application/json',
-        'ACCESS-KEY':BG_KEY,
-        'ACCESS-SIGN':sign,
-        'ACCESS-TIMESTAMP':ts,
-        'ACCESS-PASSPHRASE':BG_PASS,
-        'locale':'en-US'
+        'X-BG-KEY':BG_KEY,
+        'X-BG-SECRET':BG_SECRET,
+        'X-BG-PASS':BG_PASS
       }
     });
     const d=await r.json();
